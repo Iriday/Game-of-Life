@@ -12,35 +12,43 @@ public class Main {
 
     private void start() {
 
-        int[] input = input();
-        char[][] field = createField(input[0], input[1]);
-        output(field);
+        long[] input = input();
+        char[][] generation = createFirstGeneration((int) input[0], input[1]);
+        //output(generation);
+
+        for (int i = 0; i < input[2]; i++) {
+            generation = Generator.nextGeneration(generation);
+            // output(generation);
+        }
+        output(generation);
     }
 
-    private int[] input() {
+    private long[] input() {
         Scanner scn = new Scanner(System.in);
-        int n;
-        int s;
+        int n;  //size
+        long s; //seed
+        int m;  //number of generations
         while (true) {
+            // System.out.println("Input: universe size(size = size * size), random number(seed), number of generations. Example: 10 10 10");
             n = scn.nextInt();
-            s = scn.nextInt();
-            if (n > 0) {
+            s = scn.nextLong();
+            m = scn.nextInt();
+            if (n > 0 && m >= 0) {
                 break;
             } else {
                 System.out.println("Incorrect input, try again");
             }
         }
-        return new int[]{n, s};
+        return new long[]{n, s, m};
     }
 
-    private char[][] createField(int size, int seed) {
+    private char[][] createFirstGeneration(int size, long seed) {
         char[][] field = new char[size][size];
         Random random = new Random(seed);
-        char aliveCell = 'O';
-        char space = ' ';
+
         for (int i = 0; i < field.length; i++) {
             for (int j = 0; j < field.length; j++) {
-                field[i][j] = random.nextBoolean() ? aliveCell : space;
+                field[i][j] = random.nextBoolean() ? 'O' : ' ';
             }
         }
         return field;
