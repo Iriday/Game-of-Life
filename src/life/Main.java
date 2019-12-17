@@ -1,6 +1,6 @@
 package life;
 
-import java.util.Random;
+import java.io.IOException;
 import java.util.Scanner;
 
 public class Main {
@@ -11,47 +11,44 @@ public class Main {
     }
 
     private void start() {
+        int input = input();
+        clearConsole();
+        Generator generator = new Generator(input);
 
-        long[] input = input();
-        char[][] generation = createFirstGeneration((int) input[0], input[1]);
-        //output(generation);
-
-        for (int i = 0; i < input[2]; i++) {
-            generation = Generator.nextGeneration(generation);
-            // output(generation);
-        }
+        char[][] generation = generator.createFirstGeneration();
+        System.out.printf("Generation #%d\n", generator.getGeneration());
+        System.out.printf("Alive: %d\n\n", generator.getAlive());
         output(generation);
+
+        for (int i = 1; i < 10; i++) {
+            try {
+                Thread.sleep(500);
+            } catch (Exception e) {
+                System.out.println("Something went wrong");
+            }
+            clearConsole();
+            generation = generator.nextGeneration(generation);
+            System.out.printf("Generation #%d\n", generator.getGeneration());
+            System.out.printf("Alive: %d\n\n", generator.getAlive());
+            output(generation);
+        }
     }
 
-    private long[] input() {
+    private int input() {
         Scanner scn = new Scanner(System.in);
         int n;  //size
-        long s; //seed
-        int m;  //number of generations
+        //int m;  //number of generations
         while (true) {
             // System.out.println("Input: universe size(size = size * size), random number(seed), number of generations. Example: 10 10 10");
             n = scn.nextInt();
-            s = scn.nextLong();
-            m = scn.nextInt();
-            if (n > 0 && m >= 0) {
+            //m = scn.nextInt();
+            if (n > 0) {
                 break;
             } else {
                 System.out.println("Incorrect input, try again");
             }
         }
-        return new long[]{n, s, m};
-    }
-
-    private char[][] createFirstGeneration(int size, long seed) {
-        char[][] field = new char[size][size];
-        Random random = new Random(seed);
-
-        for (int i = 0; i < field.length; i++) {
-            for (int j = 0; j < field.length; j++) {
-                field[i][j] = random.nextBoolean() ? 'O' : ' ';
-            }
-        }
-        return field;
+        return n;
     }
 
     private void output(char[][] field) {
@@ -60,6 +57,18 @@ public class Main {
                 System.out.print(r);
             }
             System.out.println();
+        }
+    }
+
+    private void clearConsole() {
+        try {
+            if (System.getProperty("os.name").contains("Windows")) {
+                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+            } else {
+                Runtime.getRuntime().exec("clear");
+            }
+        } catch (IOException | InterruptedException e) {
+            System.out.println("Error " + e.getMessage());
         }
     }
 }
