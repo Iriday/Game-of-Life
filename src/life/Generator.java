@@ -1,16 +1,40 @@
 package life;
 
+import java.util.ArrayList;
 import java.util.Random;
 
-public class Generator {
+public class Generator implements LifeGeneratorModelInterface {//LifeGeneratorModel
     private int gridSize;
-    private int generation = 0;
-    private int alive = 0;
+    private final int timeBetweenGenerations;
+    private final int numOfGeneration;
+    private char[][] previousGeneration;
+    private int numGeneration = 0;
+    private int numAlive = 0;
+    private boolean firstGen = false;
+    private final ArrayList<LifeGeneratorObserver> lifeGeneratorObservers = new ArrayList<>();
 
-    public Generator(int gridSize) {
+    public Generator(int gridSize, int timeBetweenGenerations, int numOfGenerations) {
         this.gridSize = gridSize;
+        this.timeBetweenGenerations = timeBetweenGenerations;
+        this.numOfGeneration = numOfGenerations;
     }
 
+    @Override
+    public void generation() {
+        for (int i = 0; i < numOfGeneration; i++) {
+            nextGeneration();
+            notifyObservers();
+        }
+
+        if (numOfGeneration <= 0) {
+            while (true) {
+                nextGeneration();
+                notifyObservers();
+            }
+        }
+    }
+
+    @Override
     public char[][] createFirstGeneration() {
         char[][] firstGeneration = new char[gridSize][gridSize];
         Random random = new Random();//seed
@@ -19,19 +43,25 @@ public class Generator {
             for (int j = 0; j < firstGeneration.length; j++) {
                 boolean value = random.nextBoolean();
                 firstGeneration[i][j] = value ? 'O' : ' ';
-                alive = value ? alive + 1 : alive;
+                numAlive = value ? numAlive + 1 : numAlive;
             }
         }
-        generation++;
+        numGeneration++;
         return firstGeneration;
     }
 
-    public char[][] nextGeneration(char[][] previousGeneration) { //evolve
+    private void nextGeneration() {
+        if (!firstGen) {
+            previousGeneration = createFirstGeneration();
+            firstGen = true;
+            return;
+        }
+        doSomething();
+
         gridSize = previousGeneration.length;
         char[][] nextGeneration = new char[gridSize][gridSize];
-        alive = 0;
+        numAlive = 0;
         char aliveCell = 'O';
-        //char space = ' ';
         int neighbors = 0;
 
         for (int i = 0; i < gridSize; i++) {
@@ -75,12 +105,12 @@ public class Generator {
                         nextGeneration[i][j] = ' ';
                     } else {
                         nextGeneration[i][j] = previousGeneration[i][j];//'O'
-                        alive++;
+                        numAlive++;
                     }
                     //A dead cell is reborn if has exactly three alive neighbors
                 } else if (neighbors == 3) {
                     nextGeneration[i][j] = 'O';
-                    alive++;
+                    numAlive++;
                 } else {
                     nextGeneration[i][j] = ' ';
                 }
@@ -88,8 +118,8 @@ public class Generator {
                 neighbors = 0;
             }
         }
-        generation++;
-        return nextGeneration;
+        previousGeneration = nextGeneration;
+        numGeneration++;
     }
 
     private int balanceNeighborCoordinates(int coordinate) {
@@ -97,11 +127,45 @@ public class Generator {
         return coordinate == -1 ? gridSize - 1 : (coordinate == gridSize ? 0 : coordinate);
     }
 
-    public int getGeneration() {
-        return generation;
+    private void doSomething() {
+        try {
+            Thread.sleep(timeBetweenGenerations);
+        } catch (InterruptedException e) {
+            System.out.println("Sleep was interrupted");
+        }
     }
 
-    public int getAlive() {
-        return alive;
+    @Override
+    public int getNumGeneration() {
+        return numGeneration;
+    }
+
+    @Override
+    public int getNumAlive() {
+        return numAlive;
+    }
+
+    @Override
+    public char[][] getGeneration() {
+        return previousGeneration;
+    }
+
+    @Override
+    public void registerObservers(LifeGeneratorObserver lifeGeneratorObserver) {
+        lifeGeneratorObservers.add(lifeGeneratorObserver);
+    }
+
+    @Override
+    public void removeObservers(LifeGeneratorObserver lifeGeneratorObserver) {
+        lifeGeneratorObservers.remove(lifeGeneratorObserver);
+    }
+
+    @Override
+    public void notifyObservers() {
+        for (LifeGeneratorObserver observer : lifeGeneratorObservers) {
+            observer.updateNumGeneration();
+            observer.updateNumAlive();
+            observer.updateGeneration();
+        }
     }
 }
