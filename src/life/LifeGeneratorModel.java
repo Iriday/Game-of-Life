@@ -1,19 +1,26 @@
 package life;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Scanner;
 
-public class Generator implements LifeGeneratorModelInterface {//LifeGeneratorModel
+public class LifeGeneratorModel implements LifeGeneratorModelInterface {
     private int gridSize;
-    private final int timeBetweenGenerations;
+    private int newGridSize;
+    private boolean gridSizedChanged = false;
+    private int timeBetweenGenerations;
     private final int numOfGeneration;
     private char[][] previousGeneration;
-    private int numGeneration = 0;
-    private int numAlive = 0;
+    private volatile int numGeneration = 0;
+    private volatile int numAlive = 0;
     private boolean firstGen = false;
     private final ArrayList<LifeGeneratorObserver> lifeGeneratorObservers = new ArrayList<>();
+    private volatile boolean paused = false;
+    private volatile boolean restart = false;
 
-    public Generator(int gridSize, int timeBetweenGenerations, int numOfGenerations) {
+    public LifeGeneratorModel(int gridSize, int timeBetweenGenerations, int numOfGenerations) {
         this.gridSize = gridSize;
         this.timeBetweenGenerations = timeBetweenGenerations;
         this.numOfGeneration = numOfGenerations;
@@ -21,23 +28,27 @@ public class Generator implements LifeGeneratorModelInterface {//LifeGeneratorMo
 
     @Override
     public void generation() {
-        for (int i = 0; i < numOfGeneration; i++) {
-            nextGeneration();
-            notifyObservers();
-        }
 
-        if (numOfGeneration <= 0) {
-            while (true) {
+        for (int i = 0; i < numOfGeneration; ) {
+            if (!paused) {
                 nextGeneration();
                 notifyObservers();
+                i++;
+            }
+        }
+        if (numOfGeneration <= 0) {
+            while (true) {
+                if (!paused) {
+                    nextGeneration();
+                    notifyObservers();
+                }
             }
         }
     }
 
-    @Override
-    public char[][] createFirstGeneration() {
+    private char[][] createFirstGeneration() {
         char[][] firstGeneration = new char[gridSize][gridSize];
-        Random random = new Random();//seed
+        Random random = new Random();
 
         for (int i = 0; i < firstGeneration.length; i++) {
             for (int j = 0; j < firstGeneration.length; j++) {
@@ -51,12 +62,26 @@ public class Generator implements LifeGeneratorModelInterface {//LifeGeneratorMo
     }
 
     private void nextGeneration() {
+        if (restart) {
+            firstGen = false;
+            numGeneration = 0;
+            numAlive = 0;
+            restart = false;
+            if (gridSizedChanged) {
+                gridSize = newGridSize;
+            }
+        }
         if (!firstGen) {
             previousGeneration = createFirstGeneration();
             firstGen = true;
+            restart = false;
             return;
         }
         doSomething();
+
+        while (paused) {
+            doSomething();
+        }
 
         gridSize = previousGeneration.length;
         char[][] nextGeneration = new char[gridSize][gridSize];
@@ -166,6 +191,77 @@ public class Generator implements LifeGeneratorModelInterface {//LifeGeneratorMo
             observer.updateNumGeneration();
             observer.updateNumAlive();
             observer.updateGeneration();
+        }
+    }
+
+    @Override
+    public void setSpeed(int speed) {
+        timeBetweenGenerations = speed;
+    }
+
+    @Override
+    public void pause() {
+        paused = true;
+    }
+
+    @Override
+    public void resume() {
+        paused = false;
+    }
+
+    @Override
+    public void restart() {
+        restart = true;
+    }
+
+    @Override
+    public void setGridSize(int gridSize) {
+        this.newGridSize = gridSize;
+        gridSizedChanged = true;
+        restart();
+    }
+
+    @Override
+    public void saveState(File file) {
+        // paused = true;
+        try {
+            FileWriter fileWriter = new FileWriter(file);
+            fileWriter.write(getNumGeneration() + " " + getNumAlive() + "\n");
+            for (char[] r : previousGeneration) {
+                for (char c : r) {
+                    fileWriter.write(c);
+                }
+                fileWriter.write("\n");
+            }
+            fileWriter.flush();
+            fileWriter.close();
+        } catch (Exception e) {
+            System.out.println("Something went wrong");
+        }
+        //paused = false;
+    }
+
+    @Override
+    public void loadState(File file) {
+        char[][] data = null;
+        int index = 0;
+        try {
+            Scanner scn = new Scanner(file);
+            String[] counters = scn.nextLine().split(" ");
+            System.out.println(counters[0] + "   " + counters[1]);
+
+            while (scn.hasNext()) {
+                String temp = scn.nextLine();
+                if (data == null) {
+                    data = new char[temp.length()][temp.length()];
+                }
+                data[index++] = temp.toCharArray();
+            }
+            numGeneration = Integer.parseInt(counters[0]);
+            numAlive = Integer.parseInt(counters[1]);
+            previousGeneration = data;
+        } catch (Exception e) {
+            System.out.println("Something went wrong");
         }
     }
 }

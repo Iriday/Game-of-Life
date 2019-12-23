@@ -3,11 +3,11 @@ package life;
 public class Main {
     public static void main(String[] args) {
 
-        Generator lifeGenerator = new Generator(20, 750, -2);
+        LifeGeneratorModel lifeGeneratorModel = new LifeGeneratorModel(30, 750, -2);
         //run GUI and Console version simultaneously
-        GameOfLifeViewGUI gameOfLifeGUI = new GameOfLifeViewGUI(lifeGenerator);
-        GameOfLifeViewConsole gameOfLifeViewConsole = new GameOfLifeViewConsole(lifeGenerator);
+        GameOfLifeViewGUI gameOfLifeGUI = new GameOfLifeViewGUI(lifeGeneratorModel);
+        GameOfLifeViewConsole gameOfLifeViewConsole = new GameOfLifeViewConsole(lifeGeneratorModel);
 
-        lifeGenerator.generation();
+        lifeGeneratorModel.generation();
     }
 }
