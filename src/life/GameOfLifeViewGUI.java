@@ -8,7 +8,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
 public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
-    private final LifeGeneratorModelInterface lifeGeneratorModel;
+    private final LifeGeneratorControllerGUI controller;
+    private final LifeGeneratorModelInterface model;
     private JPanel mainPanel;
     private JPanel buttonsPanel;
     private JPanel labelsPanel;
@@ -30,14 +31,14 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
     private Field field;
     private boolean paused = false;
 
-    public GameOfLifeViewGUI(LifeGeneratorModelInterface lifeGeneratorModel) {
+    public GameOfLifeViewGUI(LifeGeneratorControllerGUI controller, LifeGeneratorModelInterface model) {
         super("Game of Life");
-        this.lifeGeneratorModel = lifeGeneratorModel;
-        this.lifeGeneratorModel.registerObservers(this);
-        createView();
+        this.controller = controller;
+        this.model = model;
+        this.model.registerObservers(this);
     }
 
-    private void createView() {
+    void createView() {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setSize(800, 600);
@@ -54,7 +55,6 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
         field = new Field();
         add(field, BorderLayout.CENTER);
 
-        //setAlwaysOnTop(true);
         setVisible(true);
     }
 
@@ -73,18 +73,18 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
             if (!paused) {
                 paused = true;
                 //pauseResumeButton.setText("RP");
-                lifeGeneratorModel.pause();
+                controller.pause();
             } else {
                 paused = false;
                 //pauseResumeButton.setText("PR");
-                lifeGeneratorModel.resume();
+                controller.resume();
             }
         });
         colorChooserButton.addActionListener(l -> {
             Color color = JColorChooser.showDialog(this, "Choose color", Color.BLACK);
             field.setColor(color);
         });
-        restartButton.addActionListener(l -> lifeGeneratorModel.restart());
+        restartButton.addActionListener(l -> controller.restart());
 
         buttonsPanel.add(Box.createHorizontalStrut(2));
         buttonsPanel.add(pauseResumeButton);
@@ -113,7 +113,7 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
         speedSlider.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent changeEvent) {
-                lifeGeneratorModel.setSpeed(speedSlider.getValue());
+                controller.setSpeed(speedSlider.getValue());
             }
         });
         speedPanel.add(speedModeLabel, BorderLayout.NORTH);
@@ -128,9 +128,8 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
         gridSizeButton = new JButton("Grid size:");
         gridSizeButton.addActionListener(l -> {
             try {
-                setGridSize(Integer.parseInt(gridSizeField.getText().trim()));
+                controller.setGridSize(Integer.parseInt(gridSizeField.getText().trim()));
             } catch (Exception e) {
-
             }
         });
         gridSizeField = new JTextField(2);
@@ -147,7 +146,7 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
             public void keyReleased(KeyEvent keyEvent) {
                 if (keyEvent.getKeyCode() == KeyEvent.VK_ENTER) {
                     try {
-                        setGridSize(Integer.parseInt(gridSizeField.getText().trim()));
+                        controller.setGridSize(Integer.parseInt(gridSizeField.getText().trim()));
                     } catch (Exception e) {
                     }
                 }
@@ -159,28 +158,27 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
         gridSizePanel.setMaximumSize(new Dimension(150, 20));
     }
 
-    void createSaveLoadStatePanel() {
+    private void createSaveLoadStatePanel() {
         saveLoadStatePanel = new JPanel();
         saveLoadStatePanel.setLayout(new BoxLayout(saveLoadStatePanel, BoxLayout.X_AXIS));
         fileChooser = new JFileChooser();
         saveStateButton = new JButton("Save");
         saveStateButton.addActionListener(l -> {
-            lifeGeneratorModel.pause();
+            controller.pause();
             int choice = fileChooser.showSaveDialog(null);
             if (choice == JFileChooser.APPROVE_OPTION) {
-                lifeGeneratorModel.saveState(fileChooser.getSelectedFile());
+                controller.save(fileChooser.getSelectedFile());
             }
-            lifeGeneratorModel.resume();
+           controller.resume();
         });
         loadStateButton = new JButton("Load");
         loadStateButton.addActionListener(l -> {
-            //boolean paused;
-            lifeGeneratorModel.pause();
+           controller.pause();
             int choice = fileChooser.showOpenDialog(null);
             if (choice == JFileChooser.APPROVE_OPTION) {
-                lifeGeneratorModel.loadState(fileChooser.getSelectedFile());
+               controller.load(fileChooser.getSelectedFile());
             }
-            lifeGeneratorModel.resume();
+            controller.resume();
         });
 
         saveLoadStatePanel.add(saveStateButton);
@@ -189,7 +187,7 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
         saveLoadStatePanel.setMaximumSize(new Dimension(130, 20));
     }
 
-    void createMainPanel() {
+    private void createMainPanel() {
         mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 
@@ -205,23 +203,19 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
         mainPanel.add(saveLoadStatePanel);
     }
 
-    private void setGridSize(int gridSize) {
-        lifeGeneratorModel.setGridSize(gridSize);
-    }
-
     @Override
     public void updateNumGeneration() {
-        generationLabel.setText("Generation #" + lifeGeneratorModel.getNumGeneration());
+        generationLabel.setText("Generation #" + model.getNumGeneration());
     }
 
     @Override
     public void updateNumAlive() {
-        aliveLabel.setText("Alive: " + lifeGeneratorModel.getNumAlive());
+        aliveLabel.setText("Alive: " + model.getNumAlive());
     }
 
     @Override
     public void updateGeneration() {
-        field.setGeneration(lifeGeneratorModel.getGeneration());
+        field.setGeneration(model.getGeneration());
         field.repaint();
     }
 
