@@ -169,14 +169,14 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
             if (choice == JFileChooser.APPROVE_OPTION) {
                 controller.save(fileChooser.getSelectedFile());
             }
-           controller.resume();
+            controller.resume();
         });
         loadStateButton = new JButton("Load");
         loadStateButton.addActionListener(l -> {
-           controller.pause();
+            controller.pause();
             int choice = fileChooser.showOpenDialog(null);
             if (choice == JFileChooser.APPROVE_OPTION) {
-               controller.load(fileChooser.getSelectedFile());
+                controller.load(fileChooser.getSelectedFile());
             }
             controller.resume();
         });
@@ -226,20 +226,20 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
         @Override
         public void paintComponent(Graphics graphics) {
             super.paintComponent(graphics);
-            int width = field.getWidth();
-            int height = field.getHeight();
-            int cellWidth = width / generation.length;
-            int cellHeight = height / generation.length;
+            int cellWidth = field.getWidth() / generation.length;
+            int cellHeight = field.getHeight() / generation.length;
+            int gridWidth = generation.length * cellWidth;
+            int gridHeight = generation.length * cellHeight;
             graphics.setColor(Color.BLACK);
 
             //draw rows
-            for (int i = 0; i < height; i += cellHeight) {
-                graphics.drawLine(0, i, width, i);
+            for (int i = 0; i <= gridHeight; i += cellHeight) {
+                graphics.drawLine(0, i, gridWidth, i);
             }
 
             //draw columns
-            for (int i = 0; i < width; i += cellWidth) {
-                graphics.drawLine(i, 0, i, height);
+            for (int i = 0; i <= gridWidth; i += cellWidth) {
+                graphics.drawLine(i, 0, i, gridHeight);
             }
 
             graphics.setColor(color);
