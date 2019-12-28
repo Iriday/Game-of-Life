@@ -16,10 +16,13 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
     private JPanel speedPanel;
     private JPanel gridSizePanel;
     private JPanel saveLoadStatePanel;
+    private JPanel cellSizePanel;
     private JLabel generationLabel;
     private JLabel aliveLabel;
     private JLabel speedModeLabel;
+    private JLabel cellSizeLabel;
     private JSlider speedSlider;
+    private JSlider cellSizeSlider;
     private JButton pauseResumeButton;
     private JButton restartButton;
     private JButton colorChooserButton;
@@ -49,6 +52,7 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
         createSpeedPanel();
         createGridSizePanel();
         createSaveLoadStatePanel();
+        createCellSizePanel();
         createMainPanel();
 
         add(mainPanel, BorderLayout.WEST);
@@ -187,6 +191,17 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
         saveLoadStatePanel.setMaximumSize(new Dimension(130, 20));
     }
 
+    private void createCellSizePanel() {
+        cellSizePanel = new JPanel(new BorderLayout(3,1));
+        cellSizeLabel = new JLabel("Cell size:");
+        cellSizeLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
+        cellSizeSlider = new JSlider(0, 100, 0);
+        cellSizeSlider.addChangeListener(l -> field.setCellSize(cellSizeSlider.getValue()));
+        cellSizePanel.add(cellSizeLabel,BorderLayout.NORTH);
+        cellSizePanel.add(cellSizeSlider);
+        cellSizePanel.setMaximumSize(new Dimension(180,35));
+    }
+
     private void createMainPanel() {
         mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
@@ -201,6 +216,8 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
         mainPanel.add(gridSizePanel);
         mainPanel.add(Box.createRigidArea(new Dimension(5, 17)));
         mainPanel.add(saveLoadStatePanel);
+        mainPanel.add(Box.createRigidArea(new Dimension(5, 17)));
+        mainPanel.add(cellSizePanel);
     }
 
     @Override
@@ -222,6 +239,9 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
     private class Field extends JPanel {
         private char[][] generation = new char[1][1];
         private Color color = Color.BLACK;
+        private int cellSize = 0;
+        int cellWidthOffset = 0;
+        int cellHeightOffset = 0;
 
         @Override
         public void paintComponent(Graphics graphics) {
@@ -230,6 +250,8 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
             int cellHeight = field.getHeight() / generation.length;
             int gridWidth = generation.length * cellWidth;
             int gridHeight = generation.length * cellHeight;
+            cellWidthOffset = cellWidth * cellSize / 200;
+            cellHeightOffset = cellHeight * cellSize / 200;
             graphics.setColor(Color.BLACK);
 
             //draw rows
@@ -247,7 +269,7 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
             for (int i = 0; i < generation.length; i++) {
                 for (int j = 0; j < generation.length; j++) {
                     if (generation[i][j] == 'O') {
-                        graphics.fillRect(j * cellWidth/*+2*/, i * cellHeight /*+2*/, cellWidth /*-4*/, cellHeight /*-4*/);
+                        graphics.fillRect(j * cellWidth + cellWidthOffset, i * cellHeight + cellHeightOffset, cellWidth - cellWidthOffset * 2, cellHeight - cellHeightOffset * 2);
                     }
                 }
             }
@@ -259,6 +281,10 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
 
         private void setColor(Color color) {
             this.color = color;
+        }
+
+        private void setCellSize(int value) {
+            cellSize = value;
         }
     }
 }
