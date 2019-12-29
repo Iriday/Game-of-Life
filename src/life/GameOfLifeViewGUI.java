@@ -6,6 +6,7 @@ import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.Random;
 
 public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
     private final LifeGeneratorControllerGUI controller;
@@ -17,10 +18,12 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
     private JPanel gridSizePanel;
     private JPanel saveLoadStatePanel;
     private JPanel cellSizePanel;
+    private JPanel randomColorPanel;
     private JLabel generationLabel;
     private JLabel aliveLabel;
     private JLabel speedModeLabel;
     private JLabel cellSizeLabel;
+    private JLabel randomColorLabel;
     private JSlider speedSlider;
     private JSlider cellSizeSlider;
     private JButton pauseResumeButton;
@@ -31,8 +34,10 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
     private JButton loadStateButton;
     private JFileChooser fileChooser;
     private JTextField gridSizeField;
+    private JToggleButton randomColorToggleButton;
     private Field field;
     private boolean paused = false;
+    private static final Random random = new Random();
 
     public GameOfLifeViewGUI(LifeGeneratorControllerGUI controller, LifeGeneratorModelInterface model) {
         super("Game of Life");
@@ -53,6 +58,7 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
         createGridSizePanel();
         createSaveLoadStatePanel();
         createCellSizePanel();
+        createRandomColorPanel();
         createMainPanel();
 
         add(mainPanel, BorderLayout.WEST);
@@ -192,14 +198,31 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
     }
 
     private void createCellSizePanel() {
-        cellSizePanel = new JPanel(new BorderLayout(3,1));
+        cellSizePanel = new JPanel(new BorderLayout(3, 1));
         cellSizeLabel = new JLabel("Cell size:");
         cellSizeLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
         cellSizeSlider = new JSlider(0, 100, 0);
         cellSizeSlider.addChangeListener(l -> field.setCellSize(cellSizeSlider.getValue()));
-        cellSizePanel.add(cellSizeLabel,BorderLayout.NORTH);
+        cellSizePanel.add(cellSizeLabel, BorderLayout.NORTH);
         cellSizePanel.add(cellSizeSlider);
-        cellSizePanel.setMaximumSize(new Dimension(180,35));
+        cellSizePanel.setMaximumSize(new Dimension(180, 35));
+    }
+
+    private void createRandomColorPanel() {
+        randomColorPanel = new JPanel();
+        randomColorLabel = new JLabel("Random color: ");
+        randomColorToggleButton = new JToggleButton();
+        randomColorToggleButton.addActionListener(l -> {
+            if (colorChooserButton.isEnabled()) {
+                colorChooserButton.setEnabled(false);
+                field.setRandomColor(true);
+            } else {
+                colorChooserButton.setEnabled(true);
+                field.setRandomColor(false);
+            }
+        });
+        randomColorPanel.add(randomColorLabel);
+        randomColorPanel.add(randomColorToggleButton);
     }
 
     private void createMainPanel() {
@@ -218,6 +241,8 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
         mainPanel.add(saveLoadStatePanel);
         mainPanel.add(Box.createRigidArea(new Dimension(5, 17)));
         mainPanel.add(cellSizePanel);
+        mainPanel.add(Box.createRigidArea(new Dimension(5, 17)));
+        mainPanel.add(randomColorPanel);
     }
 
     @Override
@@ -240,8 +265,9 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
         private char[][] generation = new char[1][1];
         private Color color = Color.BLACK;
         private int cellSize = 0;
-        int cellWidthOffset = 0;
-        int cellHeightOffset = 0;
+        private int cellWidthOffset = 0;
+        private int cellHeightOffset = 0;
+        private boolean randomColor = false;
 
         @Override
         public void paintComponent(Graphics graphics) {
@@ -269,6 +295,9 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
             for (int i = 0; i < generation.length; i++) {
                 for (int j = 0; j < generation.length; j++) {
                     if (generation[i][j] == 'O') {
+                        if (randomColor) {
+                            graphics.setColor(new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256)));
+                        }
                         graphics.fillRect(j * cellWidth + cellWidthOffset, i * cellHeight + cellHeightOffset, cellWidth - cellWidthOffset * 2, cellHeight - cellHeightOffset * 2);
                     }
                 }
@@ -285,6 +314,10 @@ public class GameOfLifeViewGUI extends JFrame implements LifeGeneratorObserver {
 
         private void setCellSize(int value) {
             cellSize = value;
+        }
+
+        private void setRandomColor(boolean value) {
+            randomColor = value;
         }
     }
 }
